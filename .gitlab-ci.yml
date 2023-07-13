@@ -1,0 +1,45 @@
+
+
+stages:
+  - build
+  - test
+  - deploy
+
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
+build bookefy:
+  stage: build
+  cache:
+    paths:
+      - .gradle/wrapper
+      - .gradle/caches
+  artifacts:
+    paths:
+      - build/libs
+  tags:
+    - bookefy
+  script:
+    - ./gradlew assemble
+
+test bookefy:
+  stage: test
+  tags:
+    - bookefy
+  script:
+    - ./gradlew check
+
+deploy bookefy:
+  stage: deploy
+  only:
+    refs:
+      - main # main branch for production pipeline
+  tags:
+    - bookefy
+  script:
+    - mkdir -p ~/api-deployment # mkdir make folder api-deployment ~/ is under current user directory so for gitlab it would be /home/gitlab/api-deployment
+    - rm -rf ~/api-deployment/* # rm remove -rf is recursive files from api-deployment
+    - cp -r build/libs/. ~/api-deployment # cp - copy build/libs is where
+    - cp docker/Dockerfile ~/api-deployment
+    - sudo service docker.bookefy restart  # this requires sudo rights for gitlab user
+
